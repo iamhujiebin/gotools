@@ -7,14 +7,30 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"time"
 )
 
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
+var test = flag.String("test", "bitmap", "write your test func")
+
+type testFunc func()
+
+type Test struct {
+	BitMap testFunc
+}
 
 func main() {
 	flag.Parse()
+	t := Test{
+		BitMap: BitMapTestFunc,
+	}
+	switch *test {
+	case "bitmap":
+		t.BitMap()
+	}
+}
+
+func BitMapTestFunc() {
 	Wrap(func() {
 		b := bitmap.New()
 		b.Add(2)
@@ -25,7 +41,6 @@ func main() {
 		}
 		println(b.Nums())
 	})
-	time.Sleep(time.Second)
 }
 
 func Wrap(f func()) {
