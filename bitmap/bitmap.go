@@ -3,25 +3,37 @@ package bitmap
 import (
 	"bytes"
 	"fmt"
+	"sync"
 )
 
 type BitMap struct {
 	words  []uint64
 	length int
+	once   sync.Once
 }
 
 func New() *BitMap {
 	return &BitMap{}
 }
 
-func (b *BitMap) Has(num int) bool {
+func (b *BitMap) Has(num uint64) bool {
 	word, bit := num/64, uint(num%64) // 64是uint64的64位
-	return word < len(b.words) && (b.words[word]&(1<<bit)) != 0
+	return word < uint64(len(b.words)) && (b.words[word]&(1<<bit)) != 0
 }
 
-func (b *BitMap) Add(num int) {
+func (b *BitMap) initBig(num uint64) {
+	b.once.Do(func() {
+		word := num / 64
+		if word > uint64(len(b.words)) {
+			b.words = make([]uint64, word)
+		}
+	})
+}
+
+func (b *BitMap) Add(num uint64) {
+	b.initBig(num)
 	word, bit := num/64, uint(num%64) // 64是uint64的64位
-	for word >= len(b.words) {
+	for word >= uint64(len(b.words)) {
 		b.words = append(b.words, 0)
 	}
 	if b.words[word]&(1<<bit) == 0 {
@@ -30,12 +42,12 @@ func (b *BitMap) Add(num int) {
 	}
 }
 
-func (b *BitMap) Remove(num int) {
+func (b *BitMap) Remove(num uint64) {
 	word, bit := num/64, uint(num%64)
-	if word >= len(b.words) {
+	if word >= uint64(len(b.words)) {
 		return
 	}
-	if b.words[word]&(1<<bit) == 1 {
+	if b.words[word]&(1<<bit) != 0 {
 		b.words[word] &= ^(uint64(1) << bit) // uint64(1) 注意要这样,直接用1是有符号整数,去反不行
 		b.length--
 	}
