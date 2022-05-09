@@ -16,6 +16,7 @@ func IntIndexOf(list []int, target int) int {
 	return index
 }
 
+// 合并int
 func IntJoin(arr []int, sep string) string {
 	var str []string
 	for _, v := range arr {
